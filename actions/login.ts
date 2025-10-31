@@ -5,17 +5,18 @@ import { signIn } from "@/auth"
 import { getUserByEmail } from "@/data/user"
 import { DEFAULT_LOGIN_REDIRECT } from "@/routes"
 import { LoginSchema, loginSchema } from "@/schemas"
-import { 
-  sendVerificationEmail, 
+import {
+  sendVerificationEmail,
   sendTwoFactorTokenEmail,
 } from "@/lib/mail"
-import { 
-  generateVerificationToken, 
+import {
+  generateVerificationToken,
   generateTwoFactorToken,
 } from "@/data/tokens"
 import { getTwoFactorTokenByEmail } from "@/data/two-factor-token"
 import { db } from "@/lib/prisma"
 import { getTwoFactorConfirmationByUserId } from "@/data/two-factor-confirmation"
+import { buildRedirectUrl } from "@/lib/safe-redirect"
 
 export async function login(
   values: LoginSchema,
@@ -31,9 +32,13 @@ export async function login(
 
   const existingUser = await getUserByEmail(email)
 
-  // Check if email really exists 
+  // Check if email really exists
   if (!existingUser || !existingUser.email) {
     return { error: 'Email does not exists!' }
+  }
+
+  if (existingUser.lockedUntil && existingUser.lockedUntil > new Date()) {
+    return { error: 'Account temporarily locked. Please try again later.' }
   }
 
   // Check if user verified email
@@ -61,8 +66,6 @@ export async function login(
       }
 
       const hasExpired = new Date(twoFactorToken.expires) < new Date()
-
-      debugger
 
       if (hasExpired) {
         return { error: 'Code expired!' }
@@ -98,13 +101,13 @@ export async function login(
     }
   }
 
-  console.log(callbackUrl)
-
   try {
+    const redirectTo = buildRedirectUrl(callbackUrl, DEFAULT_LOGIN_REDIRECT)
+
     await signIn('credentials', {
       email,
       password,
-      redirectTo: callbackUrl || DEFAULT_LOGIN_REDIRECT,
+      redirectTo,
     })
   } catch (error) {
     if (error instanceof AuthError) {

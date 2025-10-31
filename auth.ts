@@ -1,11 +1,13 @@
-import NextAuth, { type DefaultSession } from "next-auth"
-import { PrismaAdapter } from '@auth/prisma-adapter'
+import NextAuth from "next-auth"
+import { PrismaAdapter } from "@auth/prisma-adapter"
 
-import { db } from "./lib/prisma"
 import authConfig from "./auth.config"
-import { getUserById } from "./data/user"
-import { getTwoFactorConfirmationByUserId } from "./data/two-factor-confirmation"
+import { db } from "./lib/prisma"
 import { getAccountByUserId } from "./data/account"
+import { getTwoFactorConfirmationByUserId } from "./data/two-factor-confirmation"
+import { getUserById } from "./data/user"
+import { DEFAULT_LOGIN_REDIRECT } from "./routes"
+import { buildRedirectUrl } from "./lib/safe-redirect"
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
   pages: {
@@ -22,31 +24,37 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
   },
   callbacks: {
     async signIn({ user, account }) {
-      // Allow OAuth without email verification, can be account?.type too
-      if (account?.provider !== 'credentials') return true
-
       if (!user.id) {
         return false
       }
-      
+
       const existingUser = await getUserById(user.id)
 
-      // Prevent sign in without email verification
-      if (!existingUser || !existingUser.emailVerified) {
+      if (!existingUser) {
         return false
       }
 
+      if (existingUser.lockedUntil && existingUser.lockedUntil > new Date()) {
+        return false
+      }
+
+      if (account?.provider === "credentials") {
+        if (!existingUser.emailVerified) {
+          return false
+        }
+      }
+
       if (existingUser.isTwoFactorEnabled) {
-        const twoFactorConfirmation = 
+        const twoFactorConfirmation =
           await getTwoFactorConfirmationByUserId(existingUser.id)
 
-          // If not have a confirmation, block login
-          if (!twoFactorConfirmation) return false
+        // If not have a confirmation, block login
+        if (!twoFactorConfirmation) return false
 
-          // Delete two factor confirmation for next sign in
-          await db.twoFactorConfirmation.delete({
-            where: { userId: existingUser.id }
-          })
+        // Delete two factor confirmation for next sign in
+        await db.twoFactorConfirmation.delete({
+          where: { userId: existingUser.id }
+        })
       }
 
       return true
@@ -61,13 +69,17 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       }
 
       if (session.user) {
-        session.user.isTwoFactorEnabled = token.isTwoFactorEnabled
+        session.user.isTwoFactorEnabled = Boolean(token.isTwoFactorEnabled)
       }
 
       if (session.user) {
-        session.user.name = token.name
-        session.user.email = token.email! 
-        session.user.isOAuth = token.isOAuth
+        if (typeof token.name === "string") {
+          session.user.name = token.name
+        }
+        if (typeof token.email === "string") {
+          session.user.email = token.email
+        }
+        session.user.isOAuth = Boolean(token.isOAuth)
       }
 
       return session
@@ -82,12 +94,19 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
       token.isOAuth = !!existingAccount
       token.name = existingUser.name
-      token.email = existingUser.email
+      token.email = existingUser.email ?? token.email
       token.role = existingUser.role
       token.isTwoFactorEnabled = existingUser.isTwoFactorEnabled
 
       return token
-    }
+    },
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith("/api/auth")) {
+        return new URL(url, baseUrl).toString()
+      }
+
+      return buildRedirectUrl(url, DEFAULT_LOGIN_REDIRECT)
+    },
   },
   adapter: PrismaAdapter(db),
   session: { strategy: 'jwt' },
