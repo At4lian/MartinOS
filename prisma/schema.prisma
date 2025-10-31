@@ -136,6 +136,7 @@ model Deal {
   lead       Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
   activities Activity[]
   proposals  Proposal[]
+  financeRecords FinanceRecord[]
 
   @@map("crm_deals")
 }
@@ -223,4 +224,23 @@ model PriceItem {
   proposal      Proposal  @relation(fields: [proposalId], references: [id], onDelete: Cascade)
 
   @@map("crm_price_items")
+}
+
+enum FinanceRecordType {
+  INCOME
+  EXPENSE
+}
+
+model FinanceRecord {
+  id        String            @id @default(cuid())
+  date      DateTime
+  type      FinanceRecordType
+  label     String
+  amountCZK Int               @map("amount_czk")
+  dealId    String?           @map("deal_id")
+  createdAt DateTime          @default(now()) @map("created_at")
+  updatedAt DateTime          @updatedAt @map("updated_at")
+  deal      Deal?             @relation(fields: [dealId], references: [id], onDelete: SetNull)
+
+  @@map("finance_records")
 }
