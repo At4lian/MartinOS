@@ -1,21 +1,16 @@
 "use client"
 
-import { cn } from "@/lib/utils"
-import { useForm } from "react-hook-form"
 import { useState, useTransition } from "react"
+import { useForm } from "react-hook-form"
 import { useSearchParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import Image from "next/image"
-import { FieldDescription } from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
-import { LoginSchema, loginSchema } from "@/schemas"
-import { FormError } from "./form-error"
-import { FormSuccess } from "./form-success"
-import { zodResolver } from '@hookform/resolvers/zod'
-import { login } from "@/actions/login"
 import Link from "next/link"
 
+import { login } from "@/actions/login"
+import { LoginSchema, loginSchema } from "@/schemas"
+import { zodResolver } from "@hookform/resolvers/zod"
+
+import { AuthCard } from "@/components/auth-card"
+import { Button } from "@/components/ui/button"
 import {
   Form,
   FormControl,
@@ -23,31 +18,37 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { FieldDescription } from "@/components/ui/field"
+import { FormError } from "./form-error"
+import { FormSuccess } from "./form-success"
 
 export function LoginForm() {
   const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get('callbackUrl')
-  const urlError = searchParams.get('error') === 'OAuthAccountNotLinked'
-    ? 'Email already in use with different provider!'
-    : ''
+  const callbackUrl = searchParams.get("callbackUrl")
+  const urlError =
+    searchParams.get("error") === "OAuthAccountNotLinked"
+      ? "Email already in use with different provider!"
+      : ""
 
   const [showTwoFactor, setShowTwoFactor] = useState(false)
-  const [error, setError] = useState<string | undefined>('')
-  const [success, setSuccess] = useState<string | undefined>('')
+  const [error, setError] = useState<string | undefined>("")
+  const [success, setSuccess] = useState<string | undefined>("")
   const [pending, startTransition] = useTransition()
 
   const form = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
-      password: '',
-    }
+      email: "",
+      password: "",
+      code: "",
+    },
   })
 
-function onLoginSubmit(values: LoginSchema) {
-    setError('')
-    setSuccess('')
+  function onLoginSubmit(values: LoginSchema) {
+    setError("")
+    setSuccess("")
 
     startTransition(() => {
       login(values, callbackUrl)
@@ -66,110 +67,128 @@ function onLoginSubmit(values: LoginSchema) {
             setShowTwoFactor(true)
           }
         })
-        .catch(() => setError('Something went wrong!'))
+        .catch(() => setError("Something went wrong!"))
     })
   }
 
   return (
-    <div className={cn("flex flex-col gap-6 p-6")}>
-      <Card className="overflow-hidden">
-      <CardContent className="grid p-0 md:grid-cols-2">
-        <div className="p-6">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onLoginSubmit)} className="space-y-6">
+    <AuthCard
+      title={showTwoFactor ? "Check your authenticator" : "Welcome back"}
+      description={
+        showTwoFactor
+          ? "Enter the 6-digit code from your authenticator app."
+          : "Sign in with your email and password to continue."
+      }
+      footer={
+        <>
+          <FieldDescription className="text-center text-xs leading-relaxed text-muted-foreground">
+            By continuing, you agree to our
+            {" "}
+            <Link className="underline underline-offset-4" href="#">
+              Terms of Service
+            </Link>{" "}
+            and
+            {" "}
+            <Link className="underline underline-offset-4" href="#">
+              Privacy Policy
+            </Link>
+            .
+          </FieldDescription>
+          <div className="text-sm text-muted-foreground">
+            Don&apos;t have an account?{" "}
+            <Link
+              href="/auth/signup"
+              className="font-medium text-primary underline-offset-4 hover:underline"
+            >
+              Create one
+            </Link>
+          </div>
+        </>
+      }
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onLoginSubmit)} className="space-y-6">
           <div className="space-y-4">
-            {showTwoFactor && (
-            <FormField 
-            control={form.control}
-            name="code"
-            render={({field}) => (
-              <FormItem>
-              <FormLabel>Two Factor Code</FormLabel>
-              <FormControl>
-                <Input
-                type="text"
-                placeholder="123456" 
-                disabled={pending}
-                {...field}
+            {showTwoFactor ? (
+              <FormField
+                control={form.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Two-factor code</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="123456"
+                        disabled={pending}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : (
+              <>
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          autoComplete="email"
+                          placeholder="example@email.com"
+                          disabled={pending}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </FormControl>
-              <FormMessage />
-              </FormItem>
-            )}
-            />
-            )}
-            {!showTwoFactor && (
-            <>
-              <FormField 
-              control={form.control}
-              name="email"
-              render={({field}) => (
-                <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input
-                  type="email"
-                  placeholder="example@email.com" 
-                  disabled={pending}
-                  {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-                </FormItem>
-              )}
-              />
-              <FormField 
-              control={form.control}
-              name="password"
-              render={({field}) => (
-                <FormItem>
-                <FormLabel>Password</FormLabel>
-                <FormControl>
-                  <Input
-                  type="password"
-                  placeholder="*******"
-                  disabled={pending}
-                  {...field}
-                  />
-                </FormControl>
-                <Button size="sm" variant="link" className="px-0 font-normal" asChild>
-                  <Link href="/auth/reset">
-                  Forgot password?
-                  </Link>
-                </Button>
-                <FormMessage />
-                </FormItem>
-              )}
-              />
-            </>
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          autoComplete="current-password"
+                          placeholder="••••••••"
+                          disabled={pending}
+                          {...field}
+                        />
+                      </FormControl>
+                      <div className="flex justify-end">
+                        <Link
+                          href="/auth/reset"
+                          className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+                        >
+                          Forgot password?
+                        </Link>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
             )}
           </div>
-          <FormError message={error || urlError} />
-          <FormSuccess message={success} />
+          <div className="space-y-3">
+            <FormError message={error || urlError} />
+            <FormSuccess message={success} />
+          </div>
           <Button type="submit" disabled={pending} className="w-full">
-            {showTwoFactor ? 'Confirm' : 'Login'}
+            {showTwoFactor ? "Confirm code" : "Sign in"}
           </Button>
-          </form>
-        </Form>
-        <Button variant="link" className="font-normal w-full" asChild>
-          <Link href="/auth/signup">
-            <span>Don&apos;t have an account?</span>
-          </Link>
-        </Button>
-        </div>
-        <div className="bg-muted relative hidden md:block">
-                 <img
-              src="/placeholder.svg"
-              alt="Image"
-              className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
-            />
-        </div>
-      </CardContent>
-      </Card>
-      <FieldDescription className="px-6 text-center">
-      By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-      and <a href="#">Privacy Policy</a>.
-      </FieldDescription>
-    </div>
+        </form>
+      </Form>
+    </AuthCard>
   )
 }
