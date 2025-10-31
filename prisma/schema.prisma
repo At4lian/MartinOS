@@ -135,6 +135,7 @@ model Deal {
   updatedAt  DateTime  @updatedAt @map("updated_at")
   lead       Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
   activities Activity[]
+  proposals  Proposal[]
 
   @@map("crm_deals")
 }
@@ -186,4 +187,40 @@ model SequenceEnrollment {
   lead        Lead?            @relation(fields: [leadId], references: [id], onDelete: SetNull)
 
   @@map("crm_sequence_enrollments")
+}
+
+enum ProposalStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+}
+
+model Proposal {
+  id          String          @id @default(cuid())
+  dealId      String?         @map("deal_id")
+  title       String
+  scopeMd     String          @map("scope_md")
+  timelineMd  String          @map("timeline_md")
+  status      ProposalStatus  @default(DRAFT)
+  totalCZK    Int             @default(0) @map("total_czk")
+  shareToken  String          @unique @map("share_token")
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+  deal        Deal?           @relation(fields: [dealId], references: [id], onDelete: SetNull)
+  priceItems  PriceItem[]
+
+  @@map("crm_proposals")
+}
+
+model PriceItem {
+  id            String    @id @default(cuid())
+  proposalId    String    @map("proposal_id")
+  label         String
+  qty           Int
+  unitPriceCZK  Int       @map("unit_price_czk")
+  vatRate       Decimal   @map("vat_rate") @db.Decimal(5, 4)
+  proposal      Proposal  @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@map("crm_price_items")
 }

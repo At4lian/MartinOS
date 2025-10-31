@@ -57,6 +57,11 @@ const data = {
       icon: IconListDetails,
     },
     {
+      title: "Proposals",
+      url: "/proposals",
+      icon: IconFileDescription,
+    },
+    {
       title: "Lifecycle",
       url: "#",
       icon: IconListDetails,
