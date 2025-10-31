@@ -52,6 +52,11 @@ const data = {
       icon: IconTargetArrow,
     },
     {
+      title: "CRM",
+      url: "/crm",
+      icon: IconListDetails,
+    },
+    {
       title: "Lifecycle",
       url: "#",
       icon: IconListDetails,
