@@ -1,0 +1,3 @@
+export const DEFAULT_VAT_RATE = 0.21
+
+export const DEAL_DESK_MARGIN_THRESHOLD = 0.18
