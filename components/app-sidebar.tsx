@@ -3,6 +3,7 @@
 import * as React from "react"
 import {
   IconCamera,
+  IconCash,
   IconChartBar,
   IconDashboard,
   IconDatabase,
@@ -60,6 +61,11 @@ const data = {
       title: "Proposals",
       url: "/proposals",
       icon: IconFileDescription,
+    },
+    {
+      title: "Finance",
+      url: "/finance",
+      icon: IconCash,
     },
     {
       title: "Lifecycle",
