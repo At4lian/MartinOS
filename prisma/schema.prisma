@@ -88,3 +88,102 @@ model TwoFactorConfirmation {
   @@unique([userId])
   @@map("two_factor_confimation")
 }
+
+enum LeadStage {
+  LEAD
+  KVALIFIKACE
+  NAVRH
+  JEDNANI
+  VYHRANO
+  PROHRANO
+}
+
+model Lead {
+  id                  String                @id @default(cuid())
+  company             String
+  contactName         String
+  email               String
+  budget              Int?
+  industry            String?
+  source              String?
+  stage               LeadStage             @default(LEAD)
+  score               Int                   @default(0)
+  notes               String?
+  budgetScore         Int                   @default(0)
+  urgencyScore        Int                   @default(0)
+  fitScore            Int                   @default(0)
+  decisionMakerScore  Int                   @default(0)
+  referenceScore      Int                   @default(0)
+  createdAt           DateTime              @default(now()) @map("created_at")
+  updatedAt           DateTime              @updatedAt @map("updated_at")
+  deals               Deal[]
+  activities          Activity[]
+  sequenceEnrollments SequenceEnrollment[]
+
+  @@map("crm_leads")
+}
+
+model Deal {
+  id         String    @id @default(cuid())
+  leadId     String    @map("lead_id")
+  valueCZK   Int       @map("value_czk")
+  status     String
+  probability Int      @default(0)
+  nextStep   String?   @map("next_step")
+  dueDate    DateTime? @map("due_date")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  lead       Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  activities Activity[]
+
+  @@map("crm_deals")
+}
+
+model Activity {
+  id        String    @id @default(cuid())
+  leadId    String?   @map("lead_id")
+  dealId    String?   @map("deal_id")
+  type      String
+  content   String
+  createdAt DateTime  @default(now()) @map("created_at")
+  lead      Lead?     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  deal      Deal?     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@map("crm_activities")
+}
+
+model SequenceTemplate {
+  id          String               @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime             @default(now()) @map("created_at")
+  steps       SequenceStep[]
+  enrollments SequenceEnrollment[]
+
+  @@map("crm_sequence_templates")
+}
+
+model SequenceStep {
+  id         String            @id @default(cuid())
+  templateId String            @map("template_id")
+  order      Int
+  title      String
+  content    String?
+  delayDays  Int               @default(0) @map("delay_days")
+  template   SequenceTemplate  @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@map("crm_sequence_steps")
+}
+
+model SequenceEnrollment {
+  id          String           @id @default(cuid())
+  templateId  String           @map("template_id")
+  leadId      String?          @map("lead_id")
+  status      String           @default("ACTIVE")
+  currentStep Int              @default(0) @map("current_step")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  template    SequenceTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  lead        Lead?            @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  @@map("crm_sequence_enrollments")
+}
