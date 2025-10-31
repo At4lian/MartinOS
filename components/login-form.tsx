@@ -170,7 +170,7 @@ export function LoginForm() {
                           href="/auth/reset"
                           className="text-sm font-medium text-primary underline-offset-4 hover:underline"
                         >
-                          Are you idiot?
+                          Forgot password?
                         </Link>
                       </div>
                       <FormMessage />
