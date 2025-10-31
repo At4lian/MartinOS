@@ -6,7 +6,7 @@ declare global {
   var prisma: PrismaClient | undefined
 }
 
-const logLevels: ConstructorParameters<typeof PrismaClient>[0]['log'] =
+const logLevels: NonNullable<ConstructorParameters<typeof PrismaClient>[0]>['log'] =
   env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error']
 
 export const db = globalThis.prisma || new PrismaClient({
