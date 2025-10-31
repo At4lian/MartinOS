@@ -3,7 +3,7 @@ import { z } from "zod"
 const envSchema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-    DATABASE_URL: z.string().url(),
+    DATABASE_URL: z.string(),
     AUTH_SECRET: z.string().min(32, "AUTH_SECRET must be at least 32 characters"),
     NEXT_PUBLIC_APP_URL: z.string().url(),
     RESEND_API_KEY: z.string().min(1).optional(),
@@ -31,7 +31,7 @@ const envSchema = z
       .default(900),
   })
   .superRefine((currentEnv, ctx) => {
-    const providerPairs: Array<[keyof typeof currentEnv, keyof typeof currentEnv]> = [
+   const providerPairs: Array<[keyof typeof currentEnv, keyof typeof currentEnv]> = [
       ["GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET"],
       ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"],
     ]
@@ -72,7 +72,8 @@ type NormalisedEnv = Omit<RawEnv, "AUTH_REDIRECT_ALLOWLIST" | "AUTH_RATE_LIMIT_W
 const parsedEnv = envSchema.safeParse(process.env)
 
 if (!parsedEnv.success) {
-  console.error("Invalid environment variables", parsedEnv.error.flatten().fieldErrors)
+  const envError = z.treeifyError(parsedEnv.error)
+  console.error("Invalid environment variables", envError)
   throw new Error("Invalid environment variables")
 }
 
