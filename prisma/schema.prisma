@@ -224,3 +224,44 @@ model PriceItem {
 
   @@map("crm_price_items")
 }
+
+model TripIdea {
+  id         String    @id @default(cuid())
+  title      String
+  region     String
+  durationH  Int       @map("duration_h")
+  costCZK    Int       @map("cost_czk")
+  tags       String[]
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  trips      Trip[]
+
+  @@map("family_trip_ideas")
+}
+
+model Trip {
+  id              String        @id @default(cuid())
+  title           String
+  ideaId          String?       @map("idea_id")
+  date            DateTime
+  notes           String?
+  budgetLimitCZK  Int?          @map("budget_limit_czk")
+  completed       Boolean       @default(false)
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  idea            TripIdea?     @relation(fields: [ideaId], references: [id], onDelete: SetNull)
+  budgetItems     BudgetItem[]
+
+  @@map("family_trips")
+}
+
+model BudgetItem {
+  id         String  @id @default(cuid())
+  tripId     String  @map("trip_id")
+  label      String
+  amountCZK  Int     @map("amount_czk")
+  createdAt  DateTime @default(now()) @map("created_at")
+  trip       Trip    @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@map("family_budget_items")
+}
