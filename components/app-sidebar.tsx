@@ -9,7 +9,7 @@ import {
   IconFileAi,
   IconFileDescription,
   IconFileWord,
-  IconFolder,
+  IconMovie,
   IconHelp,
   IconInnerShadowTop,
   IconListDetails,
@@ -72,9 +72,9 @@ const data = {
       icon: IconChartBar,
     },
     {
-      title: "Projects",
-      url: "#",
-      icon: IconFolder,
+      title: "Production",
+      url: "/production",
+      icon: IconMovie,
     },
     {
       title: "Team",
