@@ -1,7 +1,6 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { FinanceRecordType as PrismaFinanceRecordType } from "@prisma/client"
 import { z } from "zod"
 
 import { db } from "@/lib/prisma"
@@ -16,6 +15,29 @@ import type {
   FinanceRecordType as FinanceRecordKind,
 } from "@/types/finance"
 
+type PrismaFinanceRecordType = "INCOME" | "EXPENSE"
+
+type DealWithLead = {
+  id: string
+  valueCZK: number
+  status: string
+  lead: { company: string | null } | null
+}
+
+type FinanceRecordWithDeal = {
+  id: string
+  date: Date
+  type: PrismaFinanceRecordType
+  label: string
+  amountCZK: number
+  dealId: string | null
+  deal: {
+    lead: { company: string | null } | null
+    status: string | null
+    valueCZK: number | null
+  } | null
+}
+
 const recordInputSchema = z.object({
   date: z.coerce.date(),
   type: z.enum(["income", "expense"] as const),
@@ -25,13 +47,11 @@ const recordInputSchema = z.object({
 })
 
 function mapDbTypeToClient(type: PrismaFinanceRecordType): FinanceRecordKind {
-  return type === PrismaFinanceRecordType.INCOME ? "income" : "expense"
+  return type === "INCOME" ? "income" : "expense"
 }
 
 function mapClientTypeToDb(type: FinanceRecordKind): PrismaFinanceRecordType {
-  return type === "income"
-    ? PrismaFinanceRecordType.INCOME
-    : PrismaFinanceRecordType.EXPENSE
+  return type === "income" ? "INCOME" : "EXPENSE"
 }
 
 function escapeCsvValue(value: string): string {
@@ -73,7 +93,7 @@ function parseCsvLine(line: string): string[] {
 }
 
 async function fetchFinanceDashboardData(): Promise<FinanceDashboardData> {
-  const [records, deals] = await Promise.all([
+  const [recordsResult, dealsResult] = await Promise.all([
     db.financeRecord.findMany({
       include: {
         deal: {
@@ -87,6 +107,9 @@ async function fetchFinanceDashboardData(): Promise<FinanceDashboardData> {
       orderBy: { createdAt: "desc" },
     }),
   ])
+
+  const records = recordsResult as FinanceRecordWithDeal[]
+  const deals = dealsResult as DealWithLead[]
 
   const dealSummaries: FinanceDealSummary[] = deals.map((deal) => ({
     id: deal.id,
@@ -279,10 +302,20 @@ export async function importFinanceRecordsAction(
   return fetchFinanceDashboardData()
 }
 
+type FinanceRecordForExport = {
+  date: Date
+  type: PrismaFinanceRecordType
+  label: string
+  amountCZK: number
+  dealId: string | null
+}
+
 export async function exportFinanceRecordsAction(): Promise<string> {
-  const records = await db.financeRecord.findMany({
+  const recordsResult = await db.financeRecord.findMany({
     orderBy: { date: "asc" },
   })
+
+  const records = recordsResult as FinanceRecordForExport[]
 
   const header = "date,type,label,amountCZK,dealId"
   const lines = records.map((record) => {
