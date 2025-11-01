@@ -265,6 +265,8 @@ model BudgetItem {
   trip       Trip    @relation(fields: [tripId], references: [id], onDelete: Cascade)
 
   @@map("family_budget_items")
+}
+
 enum FinanceRecordType {
   INCOME
   EXPENSE

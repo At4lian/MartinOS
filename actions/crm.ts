@@ -277,7 +277,9 @@ export async function recalculateLeadScoreAction(id: string) {
   return serializeLead(updated)
 }
 
-export const CRM_STAGE_VALUES = PIPELINE_STAGES.map((stage) => stage.value)
+export async function getCrmStageValues() {
+  return PIPELINE_STAGES.map((stage) => stage.value)
+}
 
 export async function deleteLeadAction(id: string) {
   await db.lead.delete({ where: { id } })

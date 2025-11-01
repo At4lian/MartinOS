@@ -12,8 +12,9 @@ export default async function ProposalSharePage({
 }: {
   params: { id: string }
 }) {
+  const { id } = await params
   const proposal = await db.proposal.findUnique({
-    where: { shareToken: params.id },
+    where: { shareToken: id },
     include: {
       priceItems: true,
       deal: true,

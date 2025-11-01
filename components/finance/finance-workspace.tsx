@@ -439,6 +439,9 @@ export function FinanceWorkspace({ initialData }: FinanceWorkspaceProps) {
 
             <div className="rounded-md border">
               <Table>
+                <TableCaption>
+                  CSV sloupce: <code>date,type,label,amountCZK,dealId</code>
+                </TableCaption>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Datum</TableHead>
@@ -489,9 +492,6 @@ export function FinanceWorkspace({ initialData }: FinanceWorkspaceProps) {
                 </TableBody>
               </Table>
             </div>
-            <TableCaption>
-              CSV sloupce: <code>date,type,label,amountCZK,dealId</code>
-            </TableCaption>
           </CardContent>
         </Card>
 

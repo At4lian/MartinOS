@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 
-import { prisma } from "@/lib/prisma"
+import { db } from "@/lib/prisma"
 import {
   createBudgetItemSchema,
   createTripIdeaSchema,
@@ -24,7 +24,7 @@ export async function createTripIdeaAction(input: CreateTripIdeaInput) {
     ),
   })
 
-  await prisma.tripIdea.create({
+  await db.tripIdea.create({
     data: payload,
   })
 
@@ -34,7 +34,7 @@ export async function createTripIdeaAction(input: CreateTripIdeaInput) {
 export async function createTripAction(input: CreateTripInput) {
   const payload = createTripSchema.parse(input)
 
-  await prisma.trip.create({
+  await db.trip.create({
     data: {
       title: payload.title,
       ideaId: payload.ideaId ?? null,
@@ -50,7 +50,7 @@ export async function createTripAction(input: CreateTripInput) {
 export async function addBudgetItemAction(input: CreateBudgetItemInput) {
   const payload = createBudgetItemSchema.parse(input)
 
-  await prisma.budgetItem.create({
+  await db.budgetItem.create({
     data: {
       tripId: payload.tripId,
       label: payload.label,
@@ -66,7 +66,7 @@ export async function toggleTripCompletionAction(
 ) {
   const payload = toggleTripCompletionSchema.parse(input)
 
-  await prisma.trip.update({
+  await db.trip.update({
     where: { id: payload.tripId },
     data: { completed: payload.completed },
   })

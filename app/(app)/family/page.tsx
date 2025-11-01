@@ -5,14 +5,14 @@ import { FamilyDashboard } from "./family-dashboard"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
-import { prisma } from "@/lib/prisma"
+import { db } from "@/lib/prisma"
 
 export default async function FamilyPage() {
   const [ideas, trips] = await Promise.all([
-    prisma.tripIdea.findMany({
+    db.tripIdea.findMany({
       orderBy: { title: "asc" },
     }),
-    prisma.trip.findMany({
+   db.trip.findMany({
       orderBy: { date: "asc" },
       include: {
         idea: true,
